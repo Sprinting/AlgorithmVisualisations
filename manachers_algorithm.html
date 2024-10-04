@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manacher's Algorithm Visualizer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        #inputContainer, #controlContainer {
+            margin-bottom: 20px;
+        }
+        #stringInput {
+            font-size: 16px;
+            padding: 5px;
+            width: 300px;
+        }
+        button {
+            font-size: 16px;
+            padding: 5px 10px;
+            margin: 0 5px;
+            cursor: pointer;
+        }
+        #canvas {
+            border: 1px solid #ccc;
+            background-color: white;
+        }
+        #explanation {
+            width: 600px;
+            margin-top: 20px;
+            text-align: left;
+            background-color: #e0e0e0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        #speedControl {
+            margin: 10px 0;
+        }
+        #stepCounter {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Manacher's Algorithm Visualizer</h1>
+    <div id="inputContainer">
+        <input type="text" id="stringInput" placeholder="Enter a string">
+        <button id="submitBtn">Start Visualization</button>
+    </div>
+    <div id="controlContainer">
+        <button id="stepBtn" disabled>Step</button>
+        <button id="playBtn" disabled>Play</button>
+        <button id="resetBtn" disabled>Reset</button>
+    </div>
+    <div id="speedControl">
+        Animation Speed: <input type="range" id="speedSlider" min="1" max="10" value="5">
+    </div>
+    <canvas id="canvas" width="800" height="400"></canvas>
+    <div id="stepCounter">Step: 0</div>
+    <div id="explanation"></div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const input = document.getElementById('stringInput');
+        const submitBtn = document.getElementById('submitBtn');
+        const stepBtn = document.getElementById('stepBtn');
+        const playBtn = document.getElementById('playBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const explanationDiv = document.getElementById('explanation');
+        const speedSlider = document.getElementById('speedSlider');
+        const stepCounterDiv = document.getElementById('stepCounter');
+
+        let s, T;
+        let P = [];
+        let C = 0, R = 0;
+        let stepCount = 0;
+        let charWidth, charHeight;
+        let animationInterval;
+
+        submitBtn.addEventListener('click', startVisualization);
+        stepBtn.addEventListener('click', step);
+        playBtn.addEventListener('click', togglePlay);
+        resetBtn.addEventListener('click', reset);
+
+        function startVisualization() {
+            s = input.value;
+            if (s.length === 0) {
+                alert("Please enter a non-empty string");
+                return;
+            }
+
+            reset();
+            T = preprocessString(s);
+            P = new Array(T.length).fill(0);
+            drawString();
+            enableControls(true);
+        }
+
+        function preprocessString(s) {
+            return '^#' + s.split('').join('#') + '#$';
+        }
+
+        function drawString() {
+            if (!T) return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            charWidth = canvas.width / (T.length + 2);
+            charHeight = 30;
+
+            ctx.font = '20px Arial';
+            ctx.textAlign = 'center';
+            for (let i = 1; i < T.length - 1; i++) {
+                ctx.fillStyle = T[i] === '#' ? 'lightgray' : 'black';
+                ctx.fillText(T[i], (i + 1) * charWidth, 25);
+            }
+
+            // Draw P array
+            ctx.font = '16px Arial';
+            for (let i = 1; i < T.length - 1; i++) {
+                ctx.fillStyle = 'blue';
+                ctx.fillText(P[i], (i + 1) * charWidth, 60);
+            }
+        }
+
+        function step() {
+            if (!T || C >= T.length - 1) {
+                endVisualization();
+                return;
+            }
+
+            stepCount++;
+            stepCounterDiv.textContent = `Step: ${stepCount}`;
+
+            let i = C + 1;
+            if (i < R) {
+                P[i] = Math.min(R - i, P[2 * C - i]);
+            }
+
+            // Attempt to expand palindrome centered at i
+            while (T[i + (1 + P[i])] === T[i - (1 + P[i])]) {
+                P[i]++;
+            }
+
+            // If expansion reached right boundary, adjust center and right boundary
+            if (i + P[i] > R) {
+                C = i;
+                R = i + P[i];
+            }
+
+            drawString();
+            highlightCurrentStep(i);
+            updateExplanation(i);
+
+            C = i;
+        }
+
+        function highlightCurrentStep(i) {
+            // Highlight current center
+            ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
+            ctx.fillRect((i + 0.5) * charWidth, 0, charWidth, 50);
+
+            // Highlight palindrome around center
+            ctx.fillStyle = 'rgba(0, 255, 0, 0.3)';
+            ctx.fillRect((i - P[i] + 0.5) * charWidth, 0, (2 * P[i] + 1) * charWidth, 50);
+
+            // Highlight R
+            ctx.fillStyle = 'rgba(0, 0, 255, 0.3)';
+            ctx.fillRect((R + 0.5) * charWidth, 0, charWidth, 50);
+        }
+
+        function updateExplanation(i) {
+            let explanation = `<strong>Step ${stepCount}:</strong><br>`;
+            explanation += `Current center (i): ${i}<br>`;
+            explanation += `Right boundary (R): ${R}<br>`;
+            explanation += `P[${i}] = ${P[i]}<br>`;
+            
+            if (i < R) {
+                explanation += `i is within R, so we initialize P[${i}] = min(R - i, P[${2 * C - i}])<br>`;
+            } else {
+                explanation += `i is not within R, so we start with P[${i}] = 0<br>`;
+            }
+
+            explanation += `After expansion, palindrome centered at ${i} has radius ${P[i]}<br>`;
+
+            if (i + P[i] > R) {
+                explanation += `New right boundary R is set to ${R}<br>`;
+            }
+
+            explanationDiv.innerHTML = explanation;
+        }
+
+        function togglePlay() {
+            if (animationInterval) {
+                clearInterval(animationInterval);
+                animationInterval = null;
+                playBtn.textContent = 'Play';
+            } else {
+                animationInterval = setInterval(step, 2000 / speedSlider.value);
+                playBtn.textContent = 'Pause';
+            }
+        }
+
+        function reset() {
+            C = 0;
+            R = 0;
+            stepCount = 0;
+            T = undefined;
+            P = [];
+            clearInterval(animationInterval);
+            animationInterval = null;
+            playBtn.textContent = 'Play';
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            explanationDiv.textContent = '';
+            stepCounterDiv.textContent = 'Step: 0';
+        }
+
+        function endVisualization() {
+            enableControls(false);
+            clearInterval(animationInterval);
+            animationInterval = null;
+            playBtn.textContent = 'Play';
+            
+            let maxLen = Math.max(...P);
+            let centerIndex = P.indexOf(maxLen);
+            let start = Math.floor((centerIndex - maxLen) / 2);
+            let longestPalindrome = s.substring(start, start + maxLen);
+
+            explanationDiv.innerHTML += `<br><strong>Visualization complete</strong><br>`;
+            explanationDiv.innerHTML += `Longest palindrome: ${longestPalindrome} (length: ${maxLen})`;
+        }
+
+        function enableControls(enable) {
+            stepBtn.disabled = !enable;
+            playBtn.disabled = !enable;
+            resetBtn.disabled = !enable;
+        }
+
+        speedSlider.addEventListener('input', () => {
+            if (animationInterval) {
+                clearInterval(animationInterval);
+                animationInterval = setInterval(step, 2000 / speedSlider.value);
+            }
+        });
+    </script>
+</body>
+</html>
