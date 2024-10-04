@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Algorithm Visualizers</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+        }
+        .container {
+            background-color: white;
+            border-radius: 5px;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .visualizer-link {
+            display: block;
+            background-color: #3498db;
+            color: white;
+            text-decoration: none;
+            padding: 10px 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+        .visualizer-link:hover {
+            background-color: #2980b9;
+        }
+        footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 0.9em;
+            color: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Palindrome Algorithm Visualizers</h1>
+        <p>Welcome to the Palindrome Algorithm Visualizers! This page provides links to two interactive visualizations that demonstrate different approaches to finding the longest palindromic substring in a given string.</p>
+        
+        <h2>Available Visualizers:</h2>
+        <a href="longest-palindrome-visualizer.html" class="visualizer-link">1. Expand Around Center Approach</a>
+        <p>This visualizer demonstrates the "expand around center" approach for finding the longest palindrome. It's an intuitive method that checks each possible center of a palindrome.</p>
+        
+        <a href="manacher-algorithm-visualizer.html" class="visualizer-link">2. Manacher's Algorithm</a>
+        <p>This visualizer showcases Manacher's algorithm, an efficient linear-time approach to finding the longest palindromic substring. It uses dynamic programming to avoid redundant computations.</p>
+        
+        <h2>How to Use:</h2>
+        <ol>
+            <li>Click on one of the links above to open a visualizer.</li>
+            <li>Enter a string in the input field.</li>
+            <li>Use the "Step" button to go through the algorithm step-by-step, or use "Play" for automatic animation.</li>
+            <li>Observe how the algorithm processes the string and identifies palindromes.</li>
+            <li>Use the speed control to adjust the animation speed if needed.</li>
+        </ol>
+        
+        <p>These visualizers are designed to help you understand how different algorithms approach the problem of finding the longest palindromic substring. Enjoy exploring!</p>
+    </div>
+    
+    <footer>
+        <p>I really dislike leetcode </p>
+    </footer>
+</body>
+</html>
