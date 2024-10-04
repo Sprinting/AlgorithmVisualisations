@@ -13,6 +13,9 @@
             padding: 20px;
             background-color: #f0f0f0;
         }
+        h1 {
+            color: #333;
+        }
         #inputContainer, #controlContainer {
             margin-bottom: 20px;
         }
@@ -20,24 +23,35 @@
             font-size: 16px;
             padding: 5px;
             width: 300px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
         }
         button {
             font-size: 16px;
             padding: 5px 10px;
             margin: 0 5px;
             cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+        button:disabled {
+            background-color: #cccccc;
         }
         #canvas {
             border: 1px solid #ccc;
             background-color: white;
+            border-radius: 4px;
         }
         #explanation {
-            width: 600px;
+            width: 760px;
             margin-top: 20px;
-            text-align: center;
+            text-align: left;
             background-color: #e0e0e0;
             padding: 10px;
             border-radius: 5px;
+            font-size: 14px;
         }
         #speedControl {
             margin: 10px 0;
@@ -49,7 +63,7 @@
     </style>
 </head>
 <body>
-    <h1>Expand Around Center</h1>
+    <h1>Expand Around Center Visualizer</h1>
     <div id="inputContainer">
         <input type="text" id="stringInput" placeholder="Enter a string">
         <button id="submitBtn">Start Visualization</button>
@@ -62,7 +76,7 @@
     <div id="speedControl">
         Animation Speed: <input type="range" id="speedSlider" min="1" max="10" value="5">
     </div>
-    <canvas id="canvas" width="600" height="300"></canvas>
+    <canvas id="canvas" width="800" height="400"></canvas>
     <div id="stepCounter">Step: 0</div>
     <div id="explanation"></div>
 
@@ -93,7 +107,10 @@
 
         function startVisualization() {
             s = input.value;
-            if (s.length === 0) return;
+            if (s.length === 0) {
+                alert("Please enter a non-empty string");
+                return;
+            }
 
             reset();
             drawString();
@@ -108,6 +125,7 @@
             ctx.font = '20px Arial';
             ctx.textAlign = 'center';
             for (let i = 0; i < s.length; i++) {
+                ctx.fillStyle = 'black';
                 ctx.fillText(s[i], (i + 1) * charWidth, 25);
             }
         }
@@ -127,12 +145,12 @@
             if (!isEven) {
                 left = right = currentCenter;
                 highlightCenter('red');
-                explanationDiv.innerHTML = `<strong>Odd-length center:</strong> Expanding around character '${s[currentCenter]}' at position ${currentCenter}`;
+                updateExplanation(`<strong>Odd-length center:</strong> Expanding around character '${s[currentCenter]}' at position ${currentCenter}`);
             } else {
                 left = currentCenter;
                 right = currentCenter + 1;
                 highlightCenter('blue');
-                explanationDiv.innerHTML = `<strong>Even-length center:</strong> Expanding between characters '${s[left]}' and '${s[right]}' at positions ${left}-${right}`;
+                updateExplanation(`<strong>Even-length center:</strong> Expanding between characters '${s[left]}' and '${s[right]}' at positions ${left}-${right}`);
             }
 
             await expandAroundCenter();
@@ -168,14 +186,14 @@
                             highlightLongestPalindrome();
                         }
 
-                        explanationDiv.innerHTML += `<br>Expanded to '${s.substring(left, right + 1)}'`;
+                        updateExplanation(`Expanded to '${s.substring(left, right + 1)}'`);
                         left--;
                         right++;
                         expansionStep++;
                     } else {
                         clearInterval(expandInterval);
                         if (expansionStep === 0) {
-                            explanationDiv.innerHTML += '<br>No expansion possible';
+                            updateExplanation('No expansion possible');
                         }
                         resolve();
                     }
@@ -220,7 +238,7 @@
             }
             playBtn.textContent = 'Play';
             drawString();
-            explanationDiv.textContent = '';
+            updateExplanation('');
             stepCounterDiv.textContent = 'Step: 0';
         }
 
@@ -231,13 +249,17 @@
                 animationInterval = null;
             }
             playBtn.textContent = 'Play';
-            explanationDiv.innerHTML += '<br><strong>Visualization complete</strong>';
+            updateExplanation('<strong>Visualization complete</strong>');
         }
 
         function enableControls(enable) {
             stepBtn.disabled = !enable;
             playBtn.disabled = !enable;
             resetBtn.disabled = !enable;
+        }
+
+        function updateExplanation(text) {
+            explanationDiv.innerHTML += text + '<br>';
         }
 
         speedSlider.addEventListener('input', () => {
