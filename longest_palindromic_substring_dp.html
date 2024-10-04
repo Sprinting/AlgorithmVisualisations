@@ -87,7 +87,7 @@
         let stepCount = 0;
 
         submitBtn.addEventListener('click', startVisualization);
-        stepBtn.addEventListener('click', step);
+        stepBtn.addEventListener('click', () => step());
         playBtn.addEventListener('click', togglePlay);
         resetBtn.addEventListener('click', reset);
 
@@ -112,7 +112,7 @@
             }
         }
 
-        function step() {
+        async function step() {
             if (currentCenter >= s.length) {
                 endVisualization();
                 return;
@@ -135,7 +135,7 @@
                 explanationDiv.innerHTML = `<strong>Even-length center:</strong> Expanding between characters '${s[left]}' and '${s[right]}' at positions ${left}-${right}`;
             }
 
-            expandAroundCenter();
+            await expandAroundCenter();
 
             if (isEven) {
                 currentCenter++;
@@ -155,29 +155,32 @@
         }
 
         function expandAroundCenter() {
-            let expansionStep = 0;
-            const expandInterval = setInterval(() => {
-                if (left >= 0 && right < s.length && s[left] === s[right]) {
-                    ctx.fillStyle = 'rgba(255, 255, 0, 0.3)';
-                    ctx.fillRect(left * charWidth, 30, (right - left + 1) * charWidth, charHeight);
+            return new Promise((resolve) => {
+                let expansionStep = 0;
+                const expandInterval = setInterval(() => {
+                    if (left >= 0 && right < s.length && s[left] === s[right]) {
+                        ctx.fillStyle = 'rgba(255, 255, 0, 0.3)';
+                        ctx.fillRect(left * charWidth, 30, (right - left + 1) * charWidth, charHeight);
 
-                    if (right - left + 1 > longestEnd - longestStart) {
-                        longestStart = left;
-                        longestEnd = right;
-                        highlightLongestPalindrome();
-                    }
+                        if (right - left + 1 > longestEnd - longestStart + 1) {
+                            longestStart = left;
+                            longestEnd = right;
+                            highlightLongestPalindrome();
+                        }
 
-                    explanationDiv.innerHTML += `<br>Expanded to '${s.substring(left, right + 1)}'`;
-                    left--;
-                    right++;
-                    expansionStep++;
-                } else {
-                    clearInterval(expandInterval);
-                    if (expansionStep === 0) {
-                        explanationDiv.innerHTML += '<br>No expansion possible';
+                        explanationDiv.innerHTML += `<br>Expanded to '${s.substring(left, right + 1)}'`;
+                        left--;
+                        right++;
+                        expansionStep++;
+                    } else {
+                        clearInterval(expandInterval);
+                        if (expansionStep === 0) {
+                            explanationDiv.innerHTML += '<br>No expansion possible';
+                        }
+                        resolve();
                     }
-                }
-            }, 1000 / speedSlider.value);
+                }, 1000 / speedSlider.value);
+            });
         }
 
         function highlightLongestPalindrome() {
@@ -194,8 +197,15 @@
                 animationInterval = null;
                 playBtn.textContent = 'Play';
             } else {
-                animationInterval = setInterval(step, 2000 / speedSlider.value);
                 playBtn.textContent = 'Pause';
+                async function playStep() {
+                    await step();
+                    if (animationInterval) {
+                        setTimeout(playStep, 2000 / speedSlider.value);
+                    }
+                }
+                animationInterval = true; // Use a truthy value to indicate play state
+                playStep();
             }
         }
 
@@ -204,8 +214,10 @@
             isEven = false;
             longestStart = longestEnd = 0;
             stepCount = 0;
-            clearInterval(animationInterval);
-            animationInterval = null;
+            if (animationInterval) {
+                clearInterval(animationInterval);
+                animationInterval = null;
+            }
             playBtn.textContent = 'Play';
             drawString();
             explanationDiv.textContent = '';
@@ -214,8 +226,10 @@
 
         function endVisualization() {
             enableControls(false);
-            clearInterval(animationInterval);
-            animationInterval = null;
+            if (animationInterval) {
+                clearInterval(animationInterval);
+                animationInterval = null;
+            }
             playBtn.textContent = 'Play';
             explanationDiv.innerHTML += '<br><strong>Visualization complete</strong>';
         }
@@ -227,10 +241,7 @@
         }
 
         speedSlider.addEventListener('input', () => {
-            if (animationInterval) {
-                clearInterval(animationInterval);
-                animationInterval = setInterval(step, 2000 / speedSlider.value);
-            }
+            // Speed changes will affect the next step or play cycle
         });
     </script>
 </body>
