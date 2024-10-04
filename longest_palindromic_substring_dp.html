@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expand Around Center - Longest Palindromic Substring</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        #inputContainer, #controlContainer {
+            margin-bottom: 20px;
+        }
+        #stringInput {
+            font-size: 16px;
+            padding: 5px;
+            width: 300px;
+        }
+        button {
+            font-size: 16px;
+            padding: 5px 10px;
+            margin: 0 5px;
+            cursor: pointer;
+        }
+        #canvas {
+            border: 1px solid #ccc;
+            background-color: white;
+        }
+        #explanation {
+            width: 600px;
+            margin-top: 20px;
+            text-align: center;
+            background-color: #e0e0e0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        #speedControl {
+            margin: 10px 0;
+        }
+        #stepCounter {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Expand Around Center</h1>
+    <div id="inputContainer">
+        <input type="text" id="stringInput" placeholder="Enter a string">
+        <button id="submitBtn">Start Visualization</button>
+    </div>
+    <div id="controlContainer">
+        <button id="stepBtn" disabled>Step</button>
+        <button id="playBtn" disabled>Play</button>
+        <button id="resetBtn" disabled>Reset</button>
+    </div>
+    <div id="speedControl">
+        Animation Speed: <input type="range" id="speedSlider" min="1" max="10" value="5">
+    </div>
+    <canvas id="canvas" width="600" height="300"></canvas>
+    <div id="stepCounter">Step: 0</div>
+    <div id="explanation"></div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const input = document.getElementById('stringInput');
+        const submitBtn = document.getElementById('submitBtn');
+        const stepBtn = document.getElementById('stepBtn');
+        const playBtn = document.getElementById('playBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const explanationDiv = document.getElementById('explanation');
+        const speedSlider = document.getElementById('speedSlider');
+        const stepCounterDiv = document.getElementById('stepCounter');
+
+        let s, charWidth, charHeight;
+        let currentCenter = 0;
+        let isEven = false;
+        let left, right;
+        let longestStart = 0, longestEnd = 0;
+        let animationInterval;
+        let stepCount = 0;
+
+        submitBtn.addEventListener('click', startVisualization);
+        stepBtn.addEventListener('click', step);
+        playBtn.addEventListener('click', togglePlay);
+        resetBtn.addEventListener('click', reset);
+
+        function startVisualization() {
+            s = input.value;
+            if (s.length === 0) return;
+
+            reset();
+            drawString();
+            enableControls(true);
+        }
+
+        function drawString() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            charWidth = canvas.width / (s.length + 2);
+            charHeight = 30;
+
+            ctx.font = '20px Arial';
+            ctx.textAlign = 'center';
+            for (let i = 0; i < s.length; i++) {
+                ctx.fillText(s[i], (i + 1) * charWidth, 25);
+            }
+        }
+
+        function step() {
+            if (currentCenter >= s.length) {
+                endVisualization();
+                return;
+            }
+
+            stepCount++;
+            stepCounterDiv.textContent = `Step: ${stepCount}`;
+
+            drawString();
+            highlightLongestPalindrome();
+
+            if (!isEven) {
+                left = right = currentCenter;
+                highlightCenter('red');
+                explanationDiv.innerHTML = `<strong>Odd-length center:</strong> Expanding around character '${s[currentCenter]}' at position ${currentCenter}`;
+            } else {
+                left = currentCenter;
+                right = currentCenter + 1;
+                highlightCenter('blue');
+                explanationDiv.innerHTML = `<strong>Even-length center:</strong> Expanding between characters '${s[left]}' and '${s[right]}' at positions ${left}-${right}`;
+            }
+
+            expandAroundCenter();
+
+            if (isEven) {
+                currentCenter++;
+                isEven = false;
+            } else {
+                isEven = true;
+            }
+        }
+
+        function highlightCenter(color) {
+            ctx.fillStyle = color;
+            if (!isEven) {
+                ctx.fillRect((currentCenter + 0.5) * charWidth, 30, charWidth, charHeight);
+            } else {
+                ctx.fillRect((currentCenter + 0.5) * charWidth, 30, charWidth * 2, charHeight);
+            }
+        }
+
+        function expandAroundCenter() {
+            let expansionStep = 0;
+            const expandInterval = setInterval(() => {
+                if (left >= 0 && right < s.length && s[left] === s[right]) {
+                    ctx.fillStyle = 'rgba(255, 255, 0, 0.3)';
+                    ctx.fillRect(left * charWidth, 30, (right - left + 1) * charWidth, charHeight);
+
+                    if (right - left + 1 > longestEnd - longestStart) {
+                        longestStart = left;
+                        longestEnd = right;
+                        highlightLongestPalindrome();
+                    }
+
+                    explanationDiv.innerHTML += `<br>Expanded to '${s.substring(left, right + 1)}'`;
+                    left--;
+                    right++;
+                    expansionStep++;
+                } else {
+                    clearInterval(expandInterval);
+                    if (expansionStep === 0) {
+                        explanationDiv.innerHTML += '<br>No expansion possible';
+                    }
+                }
+            }, 1000 / speedSlider.value);
+        }
+
+        function highlightLongestPalindrome() {
+            ctx.fillStyle = 'rgba(0, 255, 0, 0.3)';
+            ctx.fillRect(longestStart * charWidth, 60, (longestEnd - longestStart + 1) * charWidth, charHeight);
+
+            ctx.fillStyle = 'black';
+            ctx.fillText(`Longest Palindrome: ${s.substring(longestStart, longestEnd + 1)}`, canvas.width / 2, canvas.height - 20);
+        }
+
+        function togglePlay() {
+            if (animationInterval) {
+                clearInterval(animationInterval);
+                animationInterval = null;
+                playBtn.textContent = 'Play';
+            } else {
+                animationInterval = setInterval(step, 2000 / speedSlider.value);
+                playBtn.textContent = 'Pause';
+            }
+        }
+
+        function reset() {
+            currentCenter = 0;
+            isEven = false;
+            longestStart = longestEnd = 0;
+            stepCount = 0;
+            clearInterval(animationInterval);
+            animationInterval = null;
+            playBtn.textContent = 'Play';
+            drawString();
+            explanationDiv.textContent = '';
+            stepCounterDiv.textContent = 'Step: 0';
+        }
+
+        function endVisualization() {
+            enableControls(false);
+            clearInterval(animationInterval);
+            animationInterval = null;
+            playBtn.textContent = 'Play';
+            explanationDiv.innerHTML += '<br><strong>Visualization complete</strong>';
+        }
+
+        function enableControls(enable) {
+            stepBtn.disabled = !enable;
+            playBtn.disabled = !enable;
+            resetBtn.disabled = !enable;
+        }
+
+        speedSlider.addEventListener('input', () => {
+            if (animationInterval) {
+                clearInterval(animationInterval);
+                animationInterval = setInterval(step, 2000 / speedSlider.value);
+            }
+        });
+    </script>
+</body>
+</html>
